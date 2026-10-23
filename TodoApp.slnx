@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/Auth/Auth.csproj" />
+    <Project Path="backend/BussinesLogic/BussinesLogic.csproj" />
+    <Project Path="backend/DataAccess/DataAccess.csproj" />
+    <Project Path="backend/WebAPI/WebAPI.csproj" />
+  </Folder>
+</Solution>
