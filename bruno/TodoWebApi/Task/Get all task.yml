@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:5254/Task
+  url: http://{{IP}}:{{Port}}/Task
   body:
     type: json
     data: ""
@@ -17,12 +17,15 @@ runtime:
   scripts:
     - type: after-response
       code: |-
-        var tasks = res.body;
-        var random = tasks[Math.floor(Math.random() * tasks.length)];
-        bru.setEnvVar("taskId", random.itemId);
+        const tasks = res.body;
+        if (Array.isArray(tasks) && tasks.length > 0) {
+          const random = tasks[Math.floor(Math.random() * tasks.length)];
+          bru.setEnvVar("taskId", random.itemId);
+        }
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

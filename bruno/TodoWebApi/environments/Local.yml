@@ -1,12 +1,16 @@
 name: Local
 color: "#75c6df"
 variables:
-  - secret: true
-    name: token
   - name: username
     value: test_user
   - name: password
     value: test_password
+  - name: IP
+    value: localhost
+  - name: Port
+    value: "5000"
+  - secret: true
+    name: token
   - secret: true
     name: noteId
   - secret: true

@@ -5,7 +5,7 @@ info:
 
 http:
   method: PUT
-  url: http://localhost:5254/Task/{{noteId}}
+  url: http://{{IP}}:{{Port}}/Task/{{noteId}}
   body:
     type: json
     data: |-
@@ -23,3 +23,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
