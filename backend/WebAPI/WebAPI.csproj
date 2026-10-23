@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
-	  <ProjectReference Include="..\BussinesLogic\BussinesLogic.csproj" />
+	  <ProjectReference Include="..\BusinessLogic\BusinessLogic.csproj" />
 	  <ProjectReference Include="..\Auth\Auth.csproj" />
   </ItemGroup>
 
