@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:5254/Auth/register
+  url: http://{{IP}}:{{Port}}/Auth/register
   body:
     type: json
     data: |-
@@ -20,3 +20,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

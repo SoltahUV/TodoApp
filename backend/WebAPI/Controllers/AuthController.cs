@@ -1,5 +1,4 @@
 ﻿using Auth.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static Auth.Dtos.Dtos;
 
