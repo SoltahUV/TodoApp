@@ -2,4 +2,11 @@
 **/obj/
 **/.idea/
 **/.vs/
+**/.git/
+**/.env
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/*.user
+**/*.suo
+**/tests/
 Dockerfile*

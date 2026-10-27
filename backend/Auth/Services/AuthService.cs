@@ -20,19 +20,24 @@ namespace Auth.Services
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
                 throw new UnauthorizedAccessException("Invalid username or password");
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Value.SecretKey));
+            var config = jwtConfig.Value;
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.SecretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Name)
+                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
             };
 
+            var now = DateTime.UtcNow;
             var token = new JwtSecurityToken(
-                issuer: jwtConfig.Value.Issuer,
+                issuer: config.Issuer,
+                audience: config.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(jwtConfig.Value.ExpiresInHours),
+                notBefore: now,
+                expires: now.AddMinutes(config.ExpiresInMinutes),
                 signingCredentials: credentials
             );
             return new JwtSecurityTokenHandler().WriteToken(token);

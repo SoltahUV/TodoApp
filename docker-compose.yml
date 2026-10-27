@@ -27,8 +27,11 @@ services:
       DatabaseConfiguration__Username: todo
       DatabaseConfiguration__Password: ${DB_PASSWORD:?set DB_PASSWORD in .env}
       JwtConfiguration__SecretKey: ${JWT_SECRET:?set JWT_SECRET in .env}
+      JwtConfiguration__Issuer: ${JWT_ISSUER:-TodoApi}
+      JwtConfiguration__Audience: ${JWT_AUDIENCE:-TodoApiClients}
+      JwtConfiguration__ExpiresInMinutes: ${JWT_EXPIRES_IN_MINUTES:-60}
     ports:
-      - "5000:8080"
+      - "127.0.0.1:5000:8080"
     restart: unless-stopped
 
 volumes:

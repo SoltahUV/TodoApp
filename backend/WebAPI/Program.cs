@@ -1,35 +1,16 @@
 using Auth;
 using BusinessLogic;
 using DataAccess;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessLogic();
 builder.Services.AddAuth(builder.Configuration);
-var jwtConfig = builder.Configuration.GetSection("JwtConfiguration");
-var secret = jwtConfig["SecretKey"];
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtConfig["Issuer"],
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret!))
-        };
-    });
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

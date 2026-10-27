@@ -6,9 +6,6 @@ info:
 http:
   method: POST
   url: http://{{IP}}:{{Port}}/Task
-  headers:
-    - name: Authorization
-      value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjAxOWUwMjhkLTIxMzgtNzZiNi1iZWE3LWNhZDIzYjNiMDcxOSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJ0ZXN0IiwiZXhwIjoxNzc4MjQ1Njg0LCJpc3MiOiJUb2RvQXBpIn0.CYpvj_4q6ZpHme-5qQkbRD4qZow2zUUsLGlVSIWkF7Q
   body:
     type: json
     data: |-

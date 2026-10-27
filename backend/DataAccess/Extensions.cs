@@ -1,10 +1,12 @@
-﻿using DataAccess.Data.NoteRepo;
+﻿using DataAccess.Configuration;
+using DataAccess.Data.NoteRepo;
 using DataAccess.Data.TaskRepo;
 using DataAccess.Data.UserRepo;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using AppDbContext = DataAccess.Data.AppDbContext;
 
 namespace DataAccess
@@ -13,8 +15,22 @@ namespace DataAccess
     {
         public static IServiceCollection AddDataAccess(this IServiceCollection servicesCollection, IConfiguration configuration)
         {
-            var db = configuration.GetSection("DatabaseConfiguration");
-            var connectionString = $"Host={db["Host"]};Database={db["Database"]};Username={db["Username"]};Password={db["Password"]}";
+            var databaseConfiguration = configuration
+                .GetSection(DatabaseConfiguration.SectionName)
+                .Get<DatabaseConfiguration>()
+                ?? throw new InvalidOperationException(
+                    $"Configuration section '{DatabaseConfiguration.SectionName}' is missing.");
+
+            DatabaseConfigurationValidator.Validate(databaseConfiguration);
+
+            var connectionString = new NpgsqlConnectionStringBuilder
+            {
+                Host = databaseConfiguration.Host,
+                Port = databaseConfiguration.Port,
+                Database = databaseConfiguration.Database,
+                Username = databaseConfiguration.Username,
+                Password = databaseConfiguration.Password
+            }.ConnectionString;
 
             servicesCollection.AddScoped<INoteRepository, NoteRepository>();
             servicesCollection.AddScoped<ITaskRepository, TaskRepository>();
