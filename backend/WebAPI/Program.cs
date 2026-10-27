@@ -1,15 +1,16 @@
-using Auth;
-using BussinesLogic;
+﻿using Auth;
+using BusinessLogic;
 using DataAccess;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDataAccess(builder.Configuration);
-builder.Services.AddBusinesLogic();
+builder.Services.AddBusinessLogic();
 builder.Services.AddAuth(builder.Configuration);
 var jwtConfig = builder.Configuration.GetSection("JwtConfiguration");
 var secret = jwtConfig["SecretKey"];
@@ -36,6 +37,8 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 await app.Services.CheckDatabaseConnectionAsync();
+using (var scope = app.Services.CreateScope())
+    await scope.ServiceProvider.GetRequiredService<DataAccess.Data.AppDbContext>().Database.MigrateAsync();
 app.MapOpenApi();
 app.MapScalarApiReference();
 app.UseAuthentication();

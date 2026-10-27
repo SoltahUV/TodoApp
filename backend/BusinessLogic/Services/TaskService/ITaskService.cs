@@ -1,7 +1,7 @@
-﻿using BussinesLogic.Dtos;
+﻿using BusinessLogic.Dtos;
 using DataAccess.Models;
 
-namespace BussinesLogic.Services.TaskService
+namespace BusinessLogic.Services.TaskService
 {
     public interface ITaskService
     {

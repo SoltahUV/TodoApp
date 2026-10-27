@@ -9,13 +9,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
 	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7" />
 	<PackageReference Include="Scalar.AspNetCore" Version="2.14.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
-	  <ProjectReference Include="..\BussinesLogic\BussinesLogic.csproj" />
+	  <ProjectReference Include="..\BusinessLogic\BusinessLogic.csproj" />
 	  <ProjectReference Include="..\Auth\Auth.csproj" />
   </ItemGroup>
 

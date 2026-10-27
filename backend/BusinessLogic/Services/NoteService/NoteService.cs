@@ -1,9 +1,9 @@
-﻿using BussinesLogic.Dtos;
+﻿using BusinessLogic.Dtos;
 using DataAccess.Data.NoteRepo;
 using DataAccess.Models;
 
 
-namespace BussinesLogic.Services.NoteService
+namespace BusinessLogic.Services.NoteService
 {
     internal class NoteService(INoteRepository NoteRepository) : INoteService
     {

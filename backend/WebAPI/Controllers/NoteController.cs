@@ -1,5 +1,5 @@
-﻿using BussinesLogic.Dtos;
-using BussinesLogic.Services.NoteService;
+﻿using BusinessLogic.Dtos;
+using BusinessLogic.Services.NoteService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

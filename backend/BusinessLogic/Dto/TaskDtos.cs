@@ -1,6 +1,6 @@
 ﻿using DataAccess.Models;
 
-namespace BussinesLogic.Dtos
+namespace BusinessLogic.Dtos
 {
     public record CreateTaskDto(string Name, string? Description);
     public record UpdateTaskDto(string Name, string Description, TaskProgressStatus Status);

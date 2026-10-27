@@ -1,8 +1,8 @@
-﻿using BussinesLogic.Dtos;
+﻿using BusinessLogic.Dtos;
 using DataAccess.Data.TaskRepo;
 using DataAccess.Models;
 
-namespace BussinesLogic.Services.TaskService
+namespace BusinessLogic.Services.TaskService
 {
     internal class TaskService(ITaskRepository taskRepository) : ITaskService
     {

@@ -1,7 +1,7 @@
-﻿using BussinesLogic.Dtos;
+﻿using BusinessLogic.Dtos;
 using DataAccess.Models;
 
-namespace BussinesLogic.Services.NoteService
+namespace BusinessLogic.Services.NoteService
 {
     public interface INoteService
     {

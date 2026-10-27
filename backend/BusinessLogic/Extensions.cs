@@ -1,12 +1,12 @@
-﻿using BussinesLogic.Services.NoteService;
-using BussinesLogic.Services.TaskService;
+﻿using BusinessLogic.Services.NoteService;
+using BusinessLogic.Services.TaskService;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BussinesLogic
+namespace BusinessLogic
 {
     public static class Extensions
     {
-        public static IServiceCollection AddBusinesLogic(this IServiceCollection servicesCollection)
+        public static IServiceCollection AddBusinessLogic(this IServiceCollection servicesCollection)
         {
             servicesCollection.AddScoped<INoteService, NoteService>();
             servicesCollection.AddScoped<ITaskService, TaskService>();

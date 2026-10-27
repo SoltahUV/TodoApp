@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: tododb
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo -d tododb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DatabaseConfiguration__Host: db
+      DatabaseConfiguration__Database: tododb
+      DatabaseConfiguration__Username: todo
+      DatabaseConfiguration__Password: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      JwtConfiguration__SecretKey: ${JWT_SECRET:?set JWT_SECRET in .env}
+    ports:
+      - "5000:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
