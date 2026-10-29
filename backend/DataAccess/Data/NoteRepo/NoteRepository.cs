@@ -37,6 +37,7 @@ namespace DataAccess.Data.NoteRepo
         public async Task<List<NoteModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var notes = await context.Notes
+                .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .ToListAsync(cancellationToken);
             logger.LogInformation("Retrieved all notes for user {UserId}", userId);

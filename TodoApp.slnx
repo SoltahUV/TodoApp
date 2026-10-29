@@ -3,6 +3,10 @@
     <Project Path="backend/Auth/Auth.csproj" />
     <Project Path="backend/BusinessLogic/BusinessLogic.csproj" />
     <Project Path="backend/DataAccess/DataAccess.csproj" />
+    <Project Path="backend/Shared/Shared.csproj" />
     <Project Path="backend/WebAPI/WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/xUnit-Tests/xUnit-Tests.csproj" />
   </Folder>
 </Solution>

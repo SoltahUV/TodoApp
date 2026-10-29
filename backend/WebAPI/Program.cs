@@ -3,15 +3,28 @@ using BusinessLogic;
 using DataAccess;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
+using WebAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessLogic();
 builder.Services.AddAuth(builder.Configuration);
-
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+});
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(options =>
@@ -28,8 +41,6 @@ builder.Services.AddOpenApi(options =>
         };
         return Task.CompletedTask;
     });
-
-    // Требуем токен только у эндпоинтов с [Authorize]
     options.AddOperationTransformer((operation, context, ct) =>
     {
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
@@ -47,12 +58,16 @@ builder.Services.AddOpenApi(options =>
 
 var app = builder.Build();
 
-await app.Services.CheckDatabaseConnectionAsync();
-using (var scope = app.Services.CreateScope())
-    await scope.ServiceProvider.GetRequiredService<DataAccess.Data.AppDbContext>().Database.MigrateAsync();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseRateLimiter();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+await app.Services.CheckDatabaseConnectionAsync();
+if (args.Contains("--migrate"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<DataAccess.Data.AppDbContext>().Database.MigrateAsync();
+    return;
+}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

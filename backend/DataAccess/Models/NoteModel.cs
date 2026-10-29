@@ -2,11 +2,11 @@
 {
     public class NoteModel
     {
-        public Guid UserId { get; set; }
-        public Guid ItemId { get; set; }
+        public Guid UserId { get; init; }
+        public Guid ItemId { get; init; }
         public string Name { get; set; } = string.Empty;
-        public string Text { get; set; } = string.Empty;
-        public DateTime Created { get; set; }
+        public string? Text { get; set; }
+        public DateTime Created { get; init; }
         public DateTime Updated { get; set; }
     }
 }

@@ -1,18 +1,20 @@
 info:
-  name: "Put note update "
+  name: Put note update
   type: http
   seq: 4
+  docs: |-
+    Полная замена: обязателен name.
+    Если text не передан или null — текст очищается.
 
 http:
   method: PUT
-  url: http://{{IP}}:{{Port}}/Note/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Notes/{{noteId}}
   body:
     type: json
     data: |-
-      // Все поля обязательны
       {
-        "name" : "Test put note update",
-        "text" : "Test put text update"
+        "name": "Test put note update",
+        "text": "Test put text update"
       }
   auth:
     type: bearer

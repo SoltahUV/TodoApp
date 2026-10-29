@@ -2,9 +2,9 @@ name: Local
 color: "#75c6df"
 variables:
   - name: username
-    value: test_user
+    value: admin
   - name: password
-    value: test_password
+    value: "080907080907"
   - name: IP
     value: localhost
   - name: Port

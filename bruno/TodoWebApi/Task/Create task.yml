@@ -1,17 +1,17 @@
 info:
   name: Create task
   type: http
-  seq: 3
+  seq: 1
 
 http:
   method: POST
-  url: http://{{IP}}:{{Port}}/Task
+  url: http://{{IP}}:{{Port}}/api/Tasks
   body:
     type: json
     data: |-
       {
-        "name" : "Test task",
-        "description" : "Test description"
+        "name": "Test task",
+        "description": "Test description"
       }
   auth:
     type: bearer

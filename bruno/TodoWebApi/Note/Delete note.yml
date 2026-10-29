@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: http://{{IP}}:{{Port}}//Note/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Notes/{{noteId}}
   auth:
     type: bearer
     token: "{{token}}"

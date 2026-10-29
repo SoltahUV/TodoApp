@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260507124949_init")]
-    partial class init
+    [Migration("20261029071434_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,7 +40,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("character varying(60)");
 
                     b.Property<string>("Text")
-                        .IsRequired()
                         .HasMaxLength(140)
                         .HasColumnType("character varying(140)");
 
@@ -67,7 +66,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(140)
                         .HasColumnType("character varying(140)");
 
@@ -117,24 +115,20 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("DataAccess.Models.NoteModel", b =>
                 {
-                    b.HasOne("DataAccess.Models.UserModel", "User")
+                    b.HasOne("DataAccess.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DataAccess.Models.TaskModel", b =>
                 {
-                    b.HasOne("DataAccess.Models.UserModel", "User")
+                    b.HasOne("DataAccess.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

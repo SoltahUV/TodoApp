@@ -8,6 +8,8 @@
 - `backend/BusinessLogic` — сервисы и DTO
 - `backend/DataAccess` — EF Core, модели, репозитории, миграции
 - `backend/Auth` — регистрация, вход, выдача JWT
+- `db/init` — SQL-инициализация Postgres (роль приложения)
+- `tests/xUnit-Tests` — xUnit-тесты
 - `bruno/` — коллекция запросов для Bruno
 
 ## Запуск
@@ -16,14 +18,29 @@
 
 ```
 cp .env.example .env
-# впиши свои значения DB_PASSWORD и JWT_SECRET
-# JWT_SECRET сгенерируй: openssl rand -base64 48
+# впиши свои значения DB_PASSWORD, DB_APP_PASSWORD и JWT_SECRET
+# пароли сгенерируй: openssl rand -hex 24
+# JWT_SECRET: openssl rand -base64 48
 docker compose up --build
 ```
 
 API доступен на `http://localhost:5000` (порт опубликован только на `127.0.0.1`). Документация Scalar: `http://localhost:5000/scalar`.
 
-Таблицы в базе создаются автоматически при старте (EF Core миграции).
+Миграции EF Core применяются автоматически: при `docker compose up --build` сервис `migrator` прогоняет их до старта `api`. При локальном запуске (`dotnet run` в Development) миграции применяются при старте API.
+
+### Права в PostgreSQL
+
+Владелец БД `todo` (суперпользователь) используется только сервисом `migrator`. API подключается ролью `todo_app` с правами `SELECT/INSERT/UPDATE/DELETE` на `public`: без DDL, создания ролей и доступа к другим БД. Роль создаётся скриптом `db/init/01-app-role.sql` при первой инициализации пустого кластера; `ALTER DEFAULT PRIVILEGES` покрывает таблицы, которые позже создадут миграции.
+
+Если volume `pgdata` уже существовал до этого изменения, скрипт не выполнится — удали volume (`docker compose down -v`) либо создай роль вручную.
+
+## Тесты
+
+```bash
+dotnet test
+```
+
+93 теста, БД и Docker не нужны: валидация DTO (как её видит MVC), контракт атрибутов на record-параметрах, сервисы на фейковых репозиториях, выпуск и проверка JWT, соответствие модели EF Core лимитам из `FieldLimits`.
 
 ## Конфигурация
 
@@ -33,7 +50,8 @@ API доступен на `http://localhost:5000` (порт опубликова
 
 | Переменная | Обязательна | По умолчанию | Назначение |
 |---|---|---|---|
-| `DB_PASSWORD` | да | — | пароль PostgreSQL |
+| `DB_PASSWORD` | да | — | пароль владельца БД `todo` (используется только миграциями) |
+| `DB_APP_PASSWORD` | да | — | пароль роли `todo_app`, под которой работает API |
 | `JWT_SECRET` | да | — | ключ подписи JWT, минимум 32 символа и не меньше 10 различных символов |
 | `JWT_ISSUER` | нет | `TodoApi` | значение `iss` в токене |
 | `JWT_AUDIENCE` | нет | `TodoApiClients` | значение `aud` в токене |

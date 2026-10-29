@@ -2,17 +2,20 @@ info:
   name: Patch note update
   type: http
   seq: 5
+  docs: |-
+    Частичное обновление: любое поле можно не передавать.
+    null или отсутствие поля = «не менять».
+    Пустая строка "" в name недопустима (400).
 
 http:
   method: PATCH
-  url: http://{{IP}}:{{Port}}/Note/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Notes/{{noteId}}
   body:
     type: json
     data: |-
-      //Возможен null 
       {
-        "name" : "Test patch note update",
-        "text" : null
+        "name": "Test patch note update",
+        "text": "Test patch text update"
       }
   auth:
     type: bearer

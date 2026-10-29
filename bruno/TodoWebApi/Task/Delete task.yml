@@ -5,8 +5,10 @@ info:
 
 http:
   method: DELETE
-  url: http://{{IP}}:{{Port}}/Task/{{noteId}}
-  auth: inherit
+  url: http://{{IP}}:{{Port}}/api/Tasks/{{taskId}}
+  auth:
+    type: bearer
+    token: "{{token}}"
 
 settings:
   encodeUrl: true

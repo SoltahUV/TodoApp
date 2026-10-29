@@ -1,18 +1,22 @@
 info:
-  name: "Put task update "
+  name: Put task update
   type: http
   seq: 4
+  docs: |-
+    Полная замена: обязательны name и status.
+    Если description не передан или null — описание очищается.
+    status: 0 — NotStarted, 1 — InProgress, 2 — Done.
 
 http:
   method: PUT
-  url: http://{{IP}}:{{Port}}/Task/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Tasks/{{taskId}}
   body:
     type: json
     data: |-
       {
-        "name" : "Test put task update",
-        "description" : "Test put description update",
-        "status" : 1
+        "name": "Test put task update",
+        "description": "Test put description update",
+        "status": 1
       }
   auth:
     type: bearer

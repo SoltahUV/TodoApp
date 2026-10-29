@@ -5,6 +5,7 @@ COPY WebAPI/WebAPI.csproj WebAPI/
 COPY Auth/Auth.csproj Auth/
 COPY BusinessLogic/BusinessLogic.csproj BusinessLogic/
 COPY DataAccess/DataAccess.csproj DataAccess/
+COPY Shared/Shared.csproj Shared/
 RUN dotnet restore WebAPI/WebAPI.csproj
 
 COPY . .

@@ -1,27 +1,28 @@
-﻿using BusinessLogic.Dtos;
+﻿using BusinessLogic.Dto;
 using BusinessLogic.Services.NoteService;
+using WebAPI.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace WebAPI.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("Note")]
-    public class NoteController(INoteService noteService) : ControllerBase
+    [Route("api/[controller]")]
+    public class NotesController(INoteService noteService) : ControllerBase
     {
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateNoteDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var userId = User.GetUserId();
             await noteService.CreateAsync(userId, dto, ct);
             return NoContent();
         }
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             var result = await noteService.GetAllAsync(userId, ct);
             return Ok(result);
         }
@@ -29,7 +30,8 @@ namespace WebAPI.Controllers
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetNoteAsync([FromRoute] Guid id, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             var result = await noteService.GetByIdAsync(userId, id, ct);
             return Ok(result);
         }
@@ -37,7 +39,8 @@ namespace WebAPI.Controllers
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateByIdAsync([FromRoute] Guid id, [FromBody] UpdateNoteDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await noteService.UpdateByIdAsync(userId, id, dto, ct);
             return NoContent();
         }
@@ -45,7 +48,8 @@ namespace WebAPI.Controllers
         [HttpPatch("{id:Guid}")]
         public async Task<IActionResult> PatchByIdAsync([FromRoute] Guid id, [FromBody] PatchNoteDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await noteService.PatchByIdAsync(userId, id, dto, ct);
             return NoContent();
         }
@@ -53,7 +57,8 @@ namespace WebAPI.Controllers
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteByIdAsync([FromRoute] Guid id, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await noteService.DeleteByIdAsync(userId, id, ct);
             return NoContent();
         }

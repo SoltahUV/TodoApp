@@ -37,7 +37,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("character varying(60)");
 
                     b.Property<string>("Text")
-                        .IsRequired()
                         .HasMaxLength(140)
                         .HasColumnType("character varying(140)");
 
@@ -64,7 +63,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(140)
                         .HasColumnType("character varying(140)");
 

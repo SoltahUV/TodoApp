@@ -1,51 +1,55 @@
-﻿using BusinessLogic.Dtos;
+﻿using BusinessLogic.Dto;
+using BusinessLogic.Mapping;
 using DataAccess.Data.NoteRepo;
 using DataAccess.Models;
-
+using Shared.Exceptions;
 
 namespace BusinessLogic.Services.NoteService
 {
-    internal class NoteService(INoteRepository NoteRepository) : INoteService
+    internal class NoteService(INoteRepository noteRepository) : INoteService
     {
         public async Task CreateAsync(Guid userId, CreateNoteDto dto, CancellationToken cancellationToken = default)
         {
-            var Note = new NoteModel()
+            var now = DateTime.UtcNow;
+            var note = new NoteModel()
             {
                 UserId = userId,
                 Name = dto.Name,
                 Text = dto.Text,
-                Created = DateTime.UtcNow,
-                Updated = DateTime.UtcNow
+                Created = now,
+                Updated = now
             };
 
-            await NoteRepository.CreateAsync(Note, cancellationToken);
+            await noteRepository.CreateAsync(note, cancellationToken);
         }
 
         public async Task DeleteByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
         {
-            var note = await NoteRepository.GetByIdAsync(userId, itemId, cancellationToken);
+            var note = await noteRepository.GetByIdAsync(userId, itemId, cancellationToken);
 
             if (note == null)
-                throw new Exception("Note not found");
+                throw new NotFoundException("Note not found");
 
-            await NoteRepository.DeleteAsync(note, cancellationToken);
+            await noteRepository.DeleteAsync(note, cancellationToken);
         }
 
-        public async Task<NoteModel> GetByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
+        public async Task<NoteDto> GetByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
         {
-            var note = await NoteRepository.GetByIdAsync(userId, itemId, cancellationToken);
+            var note = await noteRepository.GetByIdAsync(userId, itemId, cancellationToken);
 
             if (note == null)
-                throw new Exception("Note not found");
+                throw new NotFoundException("Note not found");
 
-            return note;
+            return note.ToDto();
         }
-        public async Task PatchByIdAsync(Guid userId, Guid itemId, PatchNoteDto dto, CancellationToken cancellationToken = default)
+
+        public async Task PatchByIdAsync(Guid userId, Guid itemId, PatchNoteDto dto,
+            CancellationToken cancellationToken = default)
         {
-            var note = await NoteRepository.GetByIdAsync(userId, itemId, cancellationToken);
+            var note = await noteRepository.GetByIdAsync(userId, itemId, cancellationToken);
 
             if (note == null)
-                throw new Exception("Note not found");
+                throw new NotFoundException("Note not found");
 
             if (dto.Name != null)
                 note.Name = dto.Name;
@@ -55,24 +59,29 @@ namespace BusinessLogic.Services.NoteService
 
             note.Updated = DateTime.UtcNow;
 
-            await NoteRepository.UpdateAsync(note, cancellationToken);
+            await noteRepository.UpdateAsync(note, cancellationToken);
         }
-        public async Task UpdateByIdAsync(Guid userId, Guid itemId, UpdateNoteDto dto, CancellationToken cancellationToken = default)
+
+        public async Task UpdateByIdAsync(Guid userId, Guid itemId, UpdateNoteDto dto,
+            CancellationToken cancellationToken = default)
         {
-            var note = await NoteRepository.GetByIdAsync(userId, itemId, cancellationToken);
+            var note = await noteRepository.GetByIdAsync(userId, itemId, cancellationToken);
 
             if (note == null)
-                throw new Exception("Note not found");
+                throw new NotFoundException("Note not found");
 
             note.Name = dto.Name;
             note.Text = dto.Text;
             note.Updated = DateTime.UtcNow;
 
-            await NoteRepository.UpdateAsync(note, cancellationToken);
+            await noteRepository.UpdateAsync(note, cancellationToken);
         }
-        public async Task<List<NoteModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
+
+        public async Task<List<NoteDto>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            return await NoteRepository.GetAllAsync(userId, cancellationToken);
+            var notes = await noteRepository.GetAllAsync(userId, cancellationToken);
+
+            return notes.Select(note => note.ToDto()).ToList();
         }
     }
 }

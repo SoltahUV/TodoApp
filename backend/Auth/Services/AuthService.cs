@@ -6,11 +6,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Shared.Exceptions;
 
 namespace Auth.Services
 {
-    using LoginDto = Dtos.Dtos.LoginDto;
-    using RegisterDto = Dtos.Dtos.RegisterDto;
+    using LoginDto = Dto.LoginDto;
+    using RegisterDto = Dto.RegisterDto;
     public class AuthService(IUserRepository userRepository, IOptions<JwtConfiguration> jwtConfig) : IAuthService
     {
         public async Task<string> LoginAsync(LoginDto loginDto, CancellationToken cancellation = default)
@@ -18,7 +19,7 @@ namespace Auth.Services
             var user = await userRepository.GetByNameAsync(loginDto.Name, cancellation);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
-                throw new UnauthorizedAccessException("Invalid username or password");
+                throw new UnauthorizedException("Invalid username or password");
 
             var config = jwtConfig.Value;
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config.SecretKey));
@@ -47,7 +48,7 @@ namespace Auth.Services
         {
             var existing = await userRepository.GetByNameAsync(registerDto.Name, cancellation);
             if (existing != null)
-                throw new InvalidOperationException("User with this name already exists");
+                throw new ConflictException("User with this name already exists");
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password);
 

@@ -1,11 +1,11 @@
 info:
   name: Register
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
-  url: http://{{IP}}:{{Port}}/Auth/register
+  url: http://{{IP}}:{{Port}}/auth/register
   body:
     type: json
     data: |-

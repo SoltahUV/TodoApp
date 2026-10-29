@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://{{IP}}:{{Port}}/Auth/login
+  url: http://{{IP}}:{{Port}}/auth/login
   body:
     type: json
     data: |-
@@ -19,8 +19,12 @@ runtime:
   scripts:
     - type: after-response
       code: |-
-        var token = res.body.token;
-        bru.setEnvVar("token", token);
+        const body = res.body;
+        if (body && body.token) {
+          bru.setEnvVar("token", body.token);
+        } else {
+          console.error("Login failed: " + res.status);
+        }
 
 settings:
   encodeUrl: true

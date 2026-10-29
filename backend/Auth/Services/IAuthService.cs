@@ -1,7 +1,7 @@
 ﻿namespace Auth.Services
 {
-    using RegisterDto = Dtos.Dtos.RegisterDto;
-    using LoginDto = Dtos.Dtos.LoginDto;
+    using RegisterDto = Dto.RegisterDto;
+    using LoginDto = Dto.LoginDto;
     public interface IAuthService
     {
 

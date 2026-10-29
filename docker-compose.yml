@@ -1,3 +1,14 @@
+x-environment: &environment
+  DatabaseConfiguration__Host: db
+  DatabaseConfiguration__Port: 5432
+  DatabaseConfiguration__Database: tododb
+  DatabaseConfiguration__Username: todo_app
+  DatabaseConfiguration__Password: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
+  JwtConfiguration__SecretKey: ${JWT_SECRET:?set JWT_SECRET in .env}
+  JwtConfiguration__Issuer: ${JWT_ISSUER:-TodoApi}
+  JwtConfiguration__Audience: ${JWT_AUDIENCE:-TodoApiClients}
+  JwtConfiguration__ExpiresInMinutes: ${JWT_EXPIRES_IN_MINUTES:-60}
+
 services:
   db:
     image: postgres:17
@@ -5,8 +16,10 @@ services:
       POSTGRES_DB: tododb
       POSTGRES_USER: todo
       POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?set DB_APP_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     ports:
       - "127.0.0.1:5433:5432"
     healthcheck:
@@ -16,20 +29,28 @@ services:
       retries: 10
     restart: unless-stopped
 
-  api:
+  migrator:
     build: ./backend
+    image: todoapp-api
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DatabaseConfiguration__Host: db
-      DatabaseConfiguration__Database: tododb
+      <<: *environment
       DatabaseConfiguration__Username: todo
       DatabaseConfiguration__Password: ${DB_PASSWORD:?set DB_PASSWORD in .env}
-      JwtConfiguration__SecretKey: ${JWT_SECRET:?set JWT_SECRET in .env}
-      JwtConfiguration__Issuer: ${JWT_ISSUER:-TodoApi}
-      JwtConfiguration__Audience: ${JWT_AUDIENCE:-TodoApiClients}
-      JwtConfiguration__ExpiresInMinutes: ${JWT_EXPIRES_IN_MINUTES:-60}
+    command: ["--migrate"]
+    restart: "no"
+
+  api:
+    build: ./backend
+    image: todoapp-api
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    environment: *environment
     ports:
       - "127.0.0.1:5000:8080"
     restart: unless-stopped

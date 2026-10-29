@@ -2,17 +2,21 @@ info:
   name: Patch task update
   type: http
   seq: 5
+  docs: |-
+    Частичное обновление: любое поле можно не передавать.
+    null или отсутствие поля = «не менять».
+    Пустая строка "" в name недопустима (400).
 
 http:
   method: PATCH
-  url: http://{{IP}}:{{Port}}/Task/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Tasks/{{taskId}}
   body:
     type: json
     data: |-
       {
-        "name" : "Test patch task update",
-        "description" : null,
-        "status" : null
+        "name": "Test patch task update",
+        "description": "Test patch description update",
+        "status": 2
       }
   auth:
     type: bearer

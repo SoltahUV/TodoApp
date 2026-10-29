@@ -1,11 +1,13 @@
-﻿using Auth.Services;
+﻿using Auth.Dto;
+using Auth.Services;
 using Microsoft.AspNetCore.Mvc;
-using static Auth.Dtos.Dtos;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace WebAPI.Controllers
 {
+    [EnableRateLimiting("auth")]
     [ApiController]
-    [Route("Auth")]
+    [Route("auth")]
     public class AuthController(IAuthService authService) : ControllerBase
     {
         [HttpPost("register")]

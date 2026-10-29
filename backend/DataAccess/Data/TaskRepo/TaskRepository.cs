@@ -35,6 +35,7 @@ namespace DataAccess.Data.TaskRepo
         public async Task<List<TaskModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var tasks = await context.Tasks
+                .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .ToListAsync(cancellationToken);
             logger.LogInformation("Retrieved all tasks for user {UserId}", userId);

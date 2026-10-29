@@ -2,5 +2,6 @@
   <Project Path="Auth/Auth.csproj" />
   <Project Path="BusinessLogic/BusinessLogic.csproj" />
   <Project Path="DataAccess/DataAccess.csproj" />
+  <Project Path="Shared/Shared.csproj" />
   <Project Path="WebAPI/WebAPI.csproj" />
 </Solution>

@@ -1,11 +1,11 @@
 info:
   name: Get one task
   type: http
-  seq: 2
+  seq: 3
 
 http:
   method: GET
-  url: http://{{IP}}:{{Port}}/Task/{{noteId}}
+  url: http://{{IP}}:{{Port}}/api/Tasks/{{taskId}}
   auth:
     type: bearer
     token: "{{token}}"

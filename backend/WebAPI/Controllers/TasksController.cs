@@ -1,20 +1,21 @@
-﻿using BusinessLogic.Dtos;
+﻿using BusinessLogic.Dto;
 using BusinessLogic.Services.TaskService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using WebAPI.Extensions;
 
 namespace WebAPI.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("Task")]
-    public class TaskController(ITaskService taskService) : ControllerBase
+    [Route("api/[controller]")]
+    public class TasksController(ITaskService taskService) : ControllerBase
     {
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await taskService.CreateAsync(userId, dto, ct);
             return NoContent();
         }
@@ -22,14 +23,16 @@ namespace WebAPI.Controllers
         [HttpGet("{id:Guid}")]
         public async Task<IActionResult> GetByIdAsync([FromRoute] Guid id, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             var result = await taskService.GetByIdAsync(userId, id, ct);
             return Ok(result);
         }
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             var result = await taskService.GetAllAsync(userId, ct);
             return Ok(result);
         }
@@ -37,7 +40,8 @@ namespace WebAPI.Controllers
         [HttpPut("{id:Guid}")]
         public async Task<IActionResult> UpdateByIdAsync([FromRoute] Guid id, [FromBody] UpdateTaskDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await taskService.UpdateByIdAsync(userId, id, dto, ct);
             return NoContent();
         }
@@ -45,7 +49,8 @@ namespace WebAPI.Controllers
         [HttpPatch("{id:Guid}")]
         public async Task<IActionResult> PatchByIdAsync( [FromRoute] Guid id, [FromBody] PatchTaskDto dto, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await taskService.PatchByIdAsync(userId, id, dto, ct);
             return NoContent();
         }
@@ -53,7 +58,8 @@ namespace WebAPI.Controllers
         [HttpDelete("{id:Guid}")]
         public async Task<IActionResult> DeleteByIdAsync([FromRoute] Guid id, CancellationToken ct)
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var userId = User.GetUserId();
             await taskService.DeleteByIdAsync(userId, id, ct);
             return NoContent();
         }
