@@ -16,10 +16,6 @@ namespace Auth.Services
     using RegisterDto = Dto.RegisterDto;
     public class AuthService(IUserRepository userRepository, IOptions<JwtConfiguration> jwtConfig) : IAuthService
     {
-        // Валидный BCrypt-хэш пароля, которого не существует среди пользователей.
-        // Используется вместо хэша отсутствующего пользователя, чтобы проверка
-        // пароля всегда выполнялась и время ответа на логин не зависело от того,
-        // существует ли пользователь с таким именем (защита от перечисления).
         private static readonly string UnknownUserPasswordHash =
             BCrypt.Net.BCrypt.HashPassword("__unknown_user_login__");
 
@@ -27,9 +23,6 @@ namespace Auth.Services
         {
             var user = await userRepository.GetByNameAsync(loginDto.Name, cancellation);
 
-            // BCrypt всегда вызывается: для существующего пользователя — его хэш,
-            // для отсутствующего — фиктивный. Без этого ответ о несуществующем
-            // пользователе приходил бы быстрее, чем проверка пароля.
             var passwordHash = user?.PasswordHash ?? UnknownUserPasswordHash;
             var passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, passwordHash);
 
@@ -77,10 +70,7 @@ namespace Auth.Services
             }
             catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation("IX_Users_Name"))
             {
-                // Межзапросовой разгон: между проверкой имени и вставкой другой запрос
-                // мог создать того же пользователя. Уникальный индекс на Users.Name
-                // выбросит DbUpdateException — преобразуем в 409 Conflict.
-                // Любая другая ошибка БД не должна маскироваться под конфликт имён.
+
                 throw new ConflictException("User with this name already exists");
             }
         }

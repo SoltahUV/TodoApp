@@ -37,7 +37,7 @@ public class RecordValidationContractTests
     [MemberData(nameof(AllDtos))]
     public void ValidationAttributesAreNotDeclaredOnProperties(Type dtoType)
     {
-        // MVC кидает InvalidOperationException, если атрибут висит на свойстве record.
+
         var offenders = dtoType
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(property => property.GetCustomAttributes<ValidationAttribute>(inherit: true).Any())

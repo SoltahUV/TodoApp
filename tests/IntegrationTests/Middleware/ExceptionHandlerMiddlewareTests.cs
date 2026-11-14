@@ -51,7 +51,6 @@ public class ExceptionHandlerMiddlewareTests
         Assert.Equal((int)HttpStatusCode.InternalServerError, status);
         Assert.Equal("Internal error", body.GetProperty("title").GetString());
         Assert.Equal(500, body.GetProperty("status").GetInt32());
-        // For 500 responses Detail is null, so the property may be absent.
         var hasDetail = body.TryGetProperty("detail", out var detail);
         Assert.False(hasDetail || detail.ValueKind == JsonValueKind.Null);
     }

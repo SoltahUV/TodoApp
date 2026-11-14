@@ -6,6 +6,15 @@ info:
 http:
   method: GET
   url: http://{{IP}}:{{Port}}/api/Notes
+  params:
+    - name: skip
+      value: "0"
+      type: query
+      description: Количество записей, которые нужно пропустить.
+    - name: take
+      value: "50"
+      type: query
+      description: Размер страницы, от 1 до 100.
   auth:
     type: bearer
     token: "{{token}}"

@@ -44,7 +44,6 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-    // Доверяем только явно перечисленным прокси, а не всему, что пришло в заголовке.
     options.KnownProxies.Clear();
     foreach (var proxy in knownProxies)
         options.KnownProxies.Add(proxy);
@@ -63,7 +62,6 @@ builder.Services.AddRateLimiter(o =>
         if (address is { IsIPv4MappedToIPv6: true })
             address = address.MapToIPv4();
 
-        // После UseForwardedHeaders это IP клиента, а не общий адрес прокси.
         return RateLimitPartition.GetFixedWindowLimiter(
             address?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions

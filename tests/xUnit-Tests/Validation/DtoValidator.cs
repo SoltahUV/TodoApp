@@ -3,10 +3,7 @@ using System.Reflection;
 
 namespace XUnit_Tests.Validation;
 
-/// <summary>
-/// Повторяет проверку, которую делает MVC для record-DTO:
-/// атрибуты берутся с параметров конструктора, а не со свойств.
-/// </summary>
+
 internal static class DtoValidator
 {
     public static IReadOnlyList<string> InvalidMembers(object dto)
