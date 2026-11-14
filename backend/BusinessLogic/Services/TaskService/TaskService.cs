@@ -2,13 +2,14 @@
 using BusinessLogic.Mapping;
 using DataAccess.Data.TaskRepo;
 using DataAccess.Models;
+using Shared.Constraints;
 using Shared.Exceptions;
 
 namespace BusinessLogic.Services.TaskService
 {
     internal class TaskService(ITaskRepository taskRepository) : ITaskService
     {
-        public async Task CreateAsync(Guid userId, CreateTaskDto dto, CancellationToken cancellationToken = default)
+        public async Task<TaskDto> CreateAsync(Guid userId, CreateTaskDto dto, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             var task = new TaskModel()
@@ -22,6 +23,8 @@ namespace BusinessLogic.Services.TaskService
             };
 
             await taskRepository.CreateAsync(task, cancellationToken);
+
+            return task.ToDto();
         }
 
         public async Task DeleteByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
@@ -82,9 +85,13 @@ namespace BusinessLogic.Services.TaskService
             await taskRepository.UpdateAsync(task, cancellationToken);
         }
 
-        public async Task<List<TaskDto>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<TaskDto>> GetAllAsync(
+            Guid userId,
+            int skip = 0,
+            int take = FieldLimits.DefaultPageSize,
+            CancellationToken cancellationToken = default)
         {
-            var tasks = await taskRepository.GetAllAsync(userId, cancellationToken);
+            var tasks = await taskRepository.GetAllAsync(userId, skip, take, cancellationToken);
 
             return tasks.Select(task => task.ToDto()).ToList();
         }

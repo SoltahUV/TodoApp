@@ -67,5 +67,6 @@ desktop.ini
 # Secrets
 # ===========================
 .env
+docker-compose.override.yml
 **/appsettings.Development.json
 **/appsettings.Production.json

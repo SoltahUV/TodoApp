@@ -1,45 +1,47 @@
 ﻿using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using Shared.Constraints;
 
 namespace DataAccess.Data.TaskRepo
 {
-    internal class TaskRepository(AppDbContext context, ILogger<TaskRepository> logger) : ITaskRepository
+    internal class TaskRepository(AppDbContext context) : ITaskRepository
     {
         public async Task CreateAsync(TaskModel task, CancellationToken cancellationToken = default)
         {
             await context.Tasks.AddAsync(task, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Created task for user {UserId} and item {ItemId}", task.UserId, task.ItemId);
         }
 
         public async Task<TaskModel?> GetByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
         {
-            var task = await context.Tasks.FirstOrDefaultAsync(x => x.UserId == userId && x.ItemId == itemId, cancellationToken);
-            logger.LogInformation("Retrieved task for user {UserId} and item {ItemId}", userId, itemId);
-            return task;
+            return await context.Tasks.FirstOrDefaultAsync(x => x.UserId == userId && x.ItemId == itemId, cancellationToken);
         }
 
         public async Task<TaskModel?> UpdateAsync(TaskModel task, CancellationToken cancellationToken = default)
         {
             await context.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Updated task for user {UserId} and item {ItemId}", task.UserId, task.ItemId);
             return task;
         }
         public async Task DeleteAsync(TaskModel task, CancellationToken cancellationToken = default)
         {
             context.Tasks.Remove(task);
             await context.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Deleted task for user {UserId} and item {ItemId}", task.UserId, task.ItemId);
         }
-        public async Task<List<TaskModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<TaskModel>> GetAllAsync(
+            Guid userId,
+            int skip = 0,
+            int take = FieldLimits.DefaultPageSize,
+            CancellationToken cancellationToken = default)
         {
-            var tasks = await context.Tasks
+            var safeSkip = Math.Max(0, skip);
+            var safeTake = Math.Clamp(take, 1, FieldLimits.MaxPageSize);
+
+            return await context.Tasks
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .Skip(safeSkip)
+                .Take(safeTake)
                 .ToListAsync(cancellationToken);
-            logger.LogInformation("Retrieved all tasks for user {UserId}", userId);
-            return tasks;
         }
     }
 }

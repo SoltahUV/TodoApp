@@ -24,9 +24,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-API доступен на `http://localhost:5000` (порт опубликован только на `127.0.0.1`). Документация Scalar: `http://localhost:5000/scalar`.
+API доступен на `http://localhost:5000` (порт опубликован только на `127.0.0.1`). Документация Scalar: `http://localhost:5000/scalar` (только в среде Development; в Docker включается файлом `docker-compose.override.yml`, он в `.gitignore` и создаётся локально: `services: api: environment: ASPNETCORE_ENVIRONMENT: Development`).
 
-Миграции EF Core применяются автоматически: при `docker compose up --build` сервис `migrator` прогоняет их до старта `api`. При локальном запуске (`dotnet run` в Development) миграции применяются при старте API.
+Миграции EF Core применяются автоматически: при `docker compose up --build` сервис `migrator` прогоняет их до старта `api`. При локальном запуске без Docker (`dotnet run`) миграции при старте не применяются, если не включён флаг: `dotnet user-secrets set "AutoMigrate" "true" --project backend/WebAPI` (работает только в Development и только под ролью с правами DDL). В остальных случаях используй `dotnet run --project backend/WebAPI -- --migrate` или сервис `migrator`.
 
 ### Права в PostgreSQL
 
@@ -40,7 +40,7 @@ API доступен на `http://localhost:5000` (порт опубликова
 dotnet test
 ```
 
-93 теста, БД и Docker не нужны: валидация DTO (как её видит MVC), контракт атрибутов на record-параметрах, сервисы на фейковых репозиториях, выпуск и проверка JWT, соответствие модели EF Core лимитам из `FieldLimits`.
+97 тестов, БД и Docker не нужны: валидация DTO (как её видит MVC), контракт атрибутов на record-параметрах, сервисы на фейковых репозиториях, выпуск и проверка JWT, соответствие модели EF Core лимитам из `FieldLimits`.
 
 ## Конфигурация
 
@@ -86,3 +86,7 @@ dotnet run --project backend/WebAPI
 - каждый токен получает уникальный `jti`;
 - после смены `JWT_SECRET` все ранее выданные токены становятся недействительными;
 - refresh-токены и механизм отзыва пока не реализованы.
+
+## PATCH
+
+`PATCH` обновляет только явно переданные поля: `null` означает "не менять". Очистить поле (установить `null`) через `PATCH` нельзя — используйте `PUT` для полной замены записи.

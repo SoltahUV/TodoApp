@@ -1,6 +1,7 @@
 ﻿using Auth.Configuration;
 using DataAccess.Data.UserRepo;
 using DataAccess.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -14,11 +15,24 @@ namespace Auth.Services
     using RegisterDto = Dto.RegisterDto;
     public class AuthService(IUserRepository userRepository, IOptions<JwtConfiguration> jwtConfig) : IAuthService
     {
+        // Валидный BCrypt-хэш пароля, которого не существует среди пользователей.
+        // Используется вместо хэша отсутствующего пользователя, чтобы проверка
+        // пароля всегда выполнялась и время ответа на логин не зависело от того,
+        // существует ли пользователь с таким именем (защита от перечисления).
+        private static readonly string UnknownUserPasswordHash =
+            BCrypt.Net.BCrypt.HashPassword("__unknown_user_login__");
+
         public async Task<string> LoginAsync(LoginDto loginDto, CancellationToken cancellation = default)
         {
             var user = await userRepository.GetByNameAsync(loginDto.Name, cancellation);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+            // BCrypt всегда вызывается: для существующего пользователя — его хэш,
+            // для отсутствующего — фиктивный. Без этого ответ о несуществующем
+            // пользователе приходил бы быстрее, чем проверка пароля.
+            var passwordHash = user?.PasswordHash ?? UnknownUserPasswordHash;
+            var passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, passwordHash);
+
+            if (user is null || !passwordMatches)
                 throw new UnauthorizedException("Invalid username or password");
 
             var config = jwtConfig.Value;
@@ -52,11 +66,21 @@ namespace Auth.Services
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password);
 
-            await userRepository.CreateAsync(new UserModel
+            try
             {
-                Name = registerDto.Name,
-                PasswordHash = passwordHash
-            }, cancellation);
+                await userRepository.CreateAsync(new UserModel
+                {
+                    Name = registerDto.Name,
+                    PasswordHash = passwordHash
+                }, cancellation);
+            }
+            catch (DbUpdateException)
+            {
+                // Межзапросовой разгон: между проверкой имени и вставкой другой запрос
+                // мог создать того же пользователя. Уникальный индекс на Users.Name
+                // выбросит DbUpdateException — преобразуем в 409 Conflict.
+                throw new ConflictException("User with this name already exists");
+            }
         }
     }
 }

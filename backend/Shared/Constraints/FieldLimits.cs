@@ -12,5 +12,8 @@ namespace Shared.Constraints
         public const int ItemNameMax = 60;
         public const int NoteTextMax = 140;
         public const int TaskDescriptionMax = 140;
+
+        public const int DefaultPageSize = 50;
+        public const int MaxPageSize = 100;
     }
 }

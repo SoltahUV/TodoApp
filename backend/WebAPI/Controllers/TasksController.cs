@@ -2,6 +2,7 @@
 using BusinessLogic.Services.TaskService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Shared.Constraints;
 using WebAPI.Extensions;
 
 namespace WebAPI.Controllers
@@ -14,10 +15,9 @@ namespace WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateTaskDto dto, CancellationToken ct)
         {
-
             var userId = User.GetUserId();
-            await taskService.CreateAsync(userId, dto, ct);
-            return NoContent();
+            var taskDto = await taskService.CreateAsync(userId, dto, ct);
+            return Created($"/api/tasks/{taskDto.ItemId}", taskDto);
         }
 
         [HttpGet("{id:Guid}")]
@@ -29,11 +29,20 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync(CancellationToken ct)
+        public async Task<IActionResult> GetAllAsync(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = FieldLimits.DefaultPageSize,
+            CancellationToken ct = default)
         {
 
             var userId = User.GetUserId();
-            var result = await taskService.GetAllAsync(userId, ct);
+
+            if (skip < 0)
+                return BadRequest(new { error = "skip must be non-negative" });
+            if (take < 1 || take > FieldLimits.MaxPageSize)
+                return BadRequest(new { error = $"take must be between 1 and {FieldLimits.MaxPageSize}" });
+
+            var result = await taskService.GetAllAsync(userId, skip, take, ct);
             return Ok(result);
         }
 

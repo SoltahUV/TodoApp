@@ -138,24 +138,54 @@ public class TaskServiceTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public async Task GetAllAsync_WithPagination_ReturnsRequestedPage()
+    {
+        _repository.Items.Add(NewTask(UserId, name: "One"));
+        _repository.Items.Add(NewTask(UserId, name: "Two"));
+        _repository.Items.Add(NewTask(UserId, name: "Three"));
+
+        var firstPage = await _service.GetAllAsync(UserId, skip: 0, take: 2);
+        var secondPage = await _service.GetAllAsync(UserId, skip: 2, take: 2);
+
+        Assert.Equal(2, firstPage.Count);
+        Assert.Equal(1, secondPage.Count);
+        Assert.DoesNotContain(
+            secondPage.Select(dto => dto.ItemId),
+            id => firstPage.Select(dto => dto.ItemId).Contains(id));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ExcessiveTake_IsCapped()
+    {
+        _repository.Items.Add(NewTask(UserId));
+        _repository.Items.Add(NewTask(UserId));
+        _repository.Items.Add(NewTask(UserId));
+
+        var result = await _service.GetAllAsync(UserId, take: 1000);
+
+        Assert.Equal(3, result.Count);
+    }
+
     private TaskModel AddTask(
         TaskProgressStatus status = TaskProgressStatus.NotStarted,
         string? description = "Description")
     {
-        var task = NewTask(UserId, status, description);
+        var task = NewTask(UserId, status: status, description: description);
         _repository.Items.Add(task);
         return task;
     }
 
     private static TaskModel NewTask(
         Guid userId,
+        string name = "Task",
         TaskProgressStatus status = TaskProgressStatus.NotStarted,
         string? description = "Description") =>
         new()
         {
             UserId = userId,
             ItemId = Guid.NewGuid(),
-            Name = "Task",
+            Name = name,
             Description = description,
             Status = status,
             Created = DateTime.UtcNow.AddMinutes(-5),

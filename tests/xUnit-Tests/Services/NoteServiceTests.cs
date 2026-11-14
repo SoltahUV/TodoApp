@@ -109,19 +109,51 @@ public class NoteServiceTests
         Assert.IsType<NoteDto>(dto);
     }
 
+    [Fact]
+    public async Task GetAllAsync_WithPagination_ReturnsRequestedPage()
+    {
+        _repository.Items.Add(NewNote(UserId, name: "One"));
+        _repository.Items.Add(NewNote(UserId, name: "Two"));
+        _repository.Items.Add(NewNote(UserId, name: "Three"));
+
+        var firstPage = await _service.GetAllAsync(UserId, skip: 0, take: 2);
+        var secondPage = await _service.GetAllAsync(UserId, skip: 2, take: 2);
+
+        Assert.Equal(2, firstPage.Count);
+        Assert.Equal(1, secondPage.Count);
+        Assert.DoesNotContain(
+            secondPage.Select(dto => dto.ItemId),
+            id => firstPage.Select(dto => dto.ItemId).Contains(id));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ExcessiveTake_IsCapped()
+    {
+        _repository.Items.Add(NewNote(UserId));
+        _repository.Items.Add(NewNote(UserId));
+        _repository.Items.Add(NewNote(UserId));
+
+        var result = await _service.GetAllAsync(UserId, take: 1000);
+
+        Assert.Equal(3, result.Count);
+    }
+
     private NoteModel AddNote(string? text = "Text")
     {
-        var note = NewNote(UserId, text);
+        var note = NewNote(UserId, text: text);
         _repository.Items.Add(note);
         return note;
     }
 
-    private static NoteModel NewNote(Guid userId, string? text = "Text") =>
+    private static NoteModel NewNote(
+        Guid userId,
+        string name = "Note",
+        string? text = "Text") =>
         new()
         {
             UserId = userId,
             ItemId = Guid.NewGuid(),
-            Name = "Note",
+            Name = name,
             Text = text,
             Created = DateTime.UtcNow.AddMinutes(-5),
             Updated = DateTime.UtcNow.AddMinutes(-5)

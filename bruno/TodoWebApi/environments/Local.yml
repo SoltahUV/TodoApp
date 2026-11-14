@@ -3,8 +3,8 @@ color: "#75c6df"
 variables:
   - name: username
     value: admin
-  - name: password
-    value: "080907080907"
+  - secret: true
+    name: password
   - name: IP
     value: localhost
   - name: Port

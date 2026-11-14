@@ -1,5 +1,6 @@
 ﻿using BusinessLogic.Dto;
 using BusinessLogic.Services.NoteService;
+using Shared.Constraints;
 using WebAPI.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,15 +16,24 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> CreateAsync([FromBody] CreateNoteDto dto, CancellationToken ct)
         {
             var userId = User.GetUserId();
-            await noteService.CreateAsync(userId, dto, ct);
-            return NoContent();
+            var noteDto = await noteService.CreateAsync(userId, dto, ct);
+            return Created($"/api/notes/{noteDto.ItemId}", noteDto);
         }
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync(CancellationToken ct)
+        public async Task<IActionResult> GetAllAsync(
+            [FromQuery] int skip = 0,
+            [FromQuery] int take = FieldLimits.DefaultPageSize,
+            CancellationToken ct = default)
         {
 
             var userId = User.GetUserId();
-            var result = await noteService.GetAllAsync(userId, ct);
+
+            if (skip < 0)
+                return BadRequest(new { error = "skip must be non-negative" });
+            if (take < 1 || take > FieldLimits.MaxPageSize)
+                return BadRequest(new { error = $"take must be between 1 and {FieldLimits.MaxPageSize}" });
+
+            var result = await noteService.GetAllAsync(userId, skip, take, ct);
             return Ok(result);
         }
 

@@ -2,6 +2,8 @@ using Auth;
 using BusinessLogic;
 using DataAccess;
 using Microsoft.AspNetCore.Authorization;
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.RateLimiting;
 using Microsoft.OpenApi;
@@ -13,6 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessLogic();
 builder.Services.AddAuth(builder.Configuration);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
+    options.KnownProxies.Add(IPAddress.Parse("::1"));
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -59,17 +69,33 @@ builder.Services.AddOpenApi(options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseForwardedHeaders();
 app.UseRateLimiter();
 
 await app.Services.CheckDatabaseConnectionAsync();
+
 if (args.Contains("--migrate"))
 {
     await using var scope = app.Services.CreateAsyncScope();
     await scope.ServiceProvider.GetRequiredService<DataAccess.Data.AppDbContext>().Database.MigrateAsync();
     return;
 }
+
+if (app.Environment.IsDevelopment()
+    && app.Configuration.GetValue<bool>("AutoMigrate"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<DataAccess.Data.AppDbContext>().Database.MigrateAsync();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.Run();

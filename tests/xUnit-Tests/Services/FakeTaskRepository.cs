@@ -1,5 +1,6 @@
 using DataAccess.Data.TaskRepo;
 using DataAccess.Models;
+using Shared.Constraints;
 
 namespace XUnit_Tests.Services;
 
@@ -34,9 +35,19 @@ internal sealed class FakeTaskRepository : ITaskRepository
         return Task.CompletedTask;
     }
 
-    public Task<List<TaskModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
+    public Task<List<TaskModel>> GetAllAsync(
+        Guid userId,
+        int skip = 0,
+        int take = FieldLimits.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
         LastUserId = userId;
-        return Task.FromResult(Items.Where(x => x.UserId == userId).ToList());
+        var safeSkip = Math.Max(0, skip);
+        var safeTake = Math.Clamp(take, 1, FieldLimits.MaxPageSize);
+        return Task.FromResult(
+            Items.Where(x => x.UserId == userId)
+                .Skip(safeSkip)
+                .Take(safeTake)
+                .ToList());
     }
 }

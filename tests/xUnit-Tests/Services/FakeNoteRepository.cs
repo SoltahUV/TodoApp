@@ -1,5 +1,6 @@
 using DataAccess.Data.NoteRepo;
 using DataAccess.Models;
+using Shared.Constraints;
 
 namespace XUnit_Tests.Services;
 
@@ -33,6 +34,18 @@ internal sealed class FakeNoteRepository : INoteRepository
         return Task.CompletedTask;
     }
 
-    public Task<List<NoteModel>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Items.Where(x => x.UserId == userId).ToList());
+    public Task<List<NoteModel>> GetAllAsync(
+        Guid userId,
+        int skip = 0,
+        int take = FieldLimits.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var safeSkip = Math.Max(0, skip);
+        var safeTake = Math.Clamp(take, 1, FieldLimits.MaxPageSize);
+        return Task.FromResult(
+            Items.Where(x => x.UserId == userId)
+                .Skip(safeSkip)
+                .Take(safeTake)
+                .ToList());
+    }
 }

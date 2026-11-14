@@ -2,13 +2,14 @@
 using BusinessLogic.Mapping;
 using DataAccess.Data.NoteRepo;
 using DataAccess.Models;
+using Shared.Constraints;
 using Shared.Exceptions;
 
 namespace BusinessLogic.Services.NoteService
 {
     internal class NoteService(INoteRepository noteRepository) : INoteService
     {
-        public async Task CreateAsync(Guid userId, CreateNoteDto dto, CancellationToken cancellationToken = default)
+        public async Task<NoteDto> CreateAsync(Guid userId, CreateNoteDto dto, CancellationToken cancellationToken = default)
         {
             var now = DateTime.UtcNow;
             var note = new NoteModel()
@@ -21,6 +22,8 @@ namespace BusinessLogic.Services.NoteService
             };
 
             await noteRepository.CreateAsync(note, cancellationToken);
+
+            return note.ToDto();
         }
 
         public async Task DeleteByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
@@ -77,9 +80,13 @@ namespace BusinessLogic.Services.NoteService
             await noteRepository.UpdateAsync(note, cancellationToken);
         }
 
-        public async Task<List<NoteDto>> GetAllAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<NoteDto>> GetAllAsync(
+            Guid userId,
+            int skip = 0,
+            int take = FieldLimits.DefaultPageSize,
+            CancellationToken cancellationToken = default)
         {
-            var notes = await noteRepository.GetAllAsync(userId, cancellationToken);
+            var notes = await noteRepository.GetAllAsync(userId, skip, take, cancellationToken);
 
             return notes.Select(note => note.ToDto()).ToList();
         }
