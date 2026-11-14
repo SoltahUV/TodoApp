@@ -46,6 +46,8 @@ internal sealed class FakeTaskRepository : ITaskRepository
         var safeTake = Math.Clamp(take, 1, FieldLimits.MaxPageSize);
         return Task.FromResult(
             Items.Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Created)
+                .ThenBy(x => x.ItemId)
                 .Skip(safeSkip)
                 .Take(safeTake)
                 .ToList());

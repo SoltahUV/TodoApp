@@ -1,4 +1,5 @@
 ﻿using Auth.Configuration;
+using DataAccess.Data;
 using DataAccess.Data.UserRepo;
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
@@ -74,11 +75,12 @@ namespace Auth.Services
                     PasswordHash = passwordHash
                 }, cancellation);
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation("IX_Users_Name"))
             {
                 // Межзапросовой разгон: между проверкой имени и вставкой другой запрос
                 // мог создать того же пользователя. Уникальный индекс на Users.Name
                 // выбросит DbUpdateException — преобразуем в 409 Conflict.
+                // Любая другая ошибка БД не должна маскироваться под конфликт имён.
                 throw new ConflictException("User with this name already exists");
             }
         }

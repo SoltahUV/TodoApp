@@ -7,10 +7,13 @@ internal sealed class FakeUserRepository : IUserRepository
 {
     public List<UserModel> Users { get; } = [];
     public int CreateCalls { get; private set; }
+    public Exception? CreateException { get; set; }
 
     public Task CreateAsync(UserModel user, CancellationToken cancellationToken = default)
     {
         CreateCalls++;
+        if (CreateException is not null)
+            return Task.FromException(CreateException);
         Users.Add(user);
         return Task.CompletedTask;
     }

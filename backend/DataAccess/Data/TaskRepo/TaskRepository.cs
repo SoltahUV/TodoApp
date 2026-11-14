@@ -39,6 +39,8 @@ namespace DataAccess.Data.TaskRepo
             return await context.Tasks
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Created)
+                .ThenBy(x => x.ItemId)
                 .Skip(safeSkip)
                 .Take(safeTake)
                 .ToListAsync(cancellationToken);

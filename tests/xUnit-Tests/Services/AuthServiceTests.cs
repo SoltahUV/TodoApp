@@ -3,7 +3,9 @@ using Auth.Configuration;
 using Auth.Dto;
 using Auth.Services;
 using DataAccess.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Shared.Exceptions;
 
 namespace XUnit_Tests.Services;
@@ -94,6 +96,45 @@ public class AuthServiceTests
 
         Assert.Equal(0, _repository.CreateCalls);
     }
+
+    [Fact]
+    public async Task RegisterAsync_UniqueViolationOnNameIndex_ThrowsConflict()
+    {
+        _repository.CreateException = UniqueViolation("IX_Users_Name");
+
+        await Assert.ThrowsAsync<ConflictException>(
+            () => _service.RegisterAsync(new RegisterDto("alice", Password)));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_OtherDatabaseError_IsNotConvertedToConflict()
+    {
+        _repository.CreateException = new DbUpdateException(
+            "database is unavailable",
+            new InvalidOperationException("connection lost"));
+
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => _service.RegisterAsync(new RegisterDto("alice", Password)));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_UniqueViolationOnAnotherIndex_IsNotConvertedToConflict()
+    {
+        _repository.CreateException = UniqueViolation("IX_Other_Unique");
+
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () => _service.RegisterAsync(new RegisterDto("alice", Password)));
+    }
+
+    private static DbUpdateException UniqueViolation(string constraintName) =>
+        new(
+            "duplicate key value violates unique constraint",
+            new PostgresException(
+                "duplicate key value violates unique constraint",
+                "ERROR",
+                "ERROR",
+                PostgresErrorCodes.UniqueViolation,
+                constraintName: constraintName));
 
     private UserModel AddUser(string name)
     {

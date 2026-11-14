@@ -16,24 +16,63 @@ builder.Services.AddDataAccess(builder.Configuration);
 builder.Services.AddBusinessLogic();
 builder.Services.AddAuth(builder.Configuration);
 
+var forwardedHeadersConfiguration = builder.Configuration.GetSection("ForwardedHeaders");
+var knownProxyValues = forwardedHeadersConfiguration.GetSection("KnownProxies").Get<string[]>()
+    ?? ["127.0.0.1", "::1"];
+var knownNetworkValues = forwardedHeadersConfiguration.GetSection("KnownNetworks").Get<string[]>()
+    ?? ["172.16.0.0/12", "fd00::/8"];
+
+var knownProxies = new List<IPAddress>();
+foreach (var value in knownProxyValues)
+{
+    if (!IPAddress.TryParse(value, out var proxy))
+        throw new InvalidOperationException(
+            $"ForwardedHeaders:KnownProxies contains an invalid IP address: '{value}'.");
+    knownProxies.Add(proxy);
+}
+
+var knownNetworks = new List<System.Net.IPNetwork>();
+foreach (var value in knownNetworkValues)
+{
+    if (!System.Net.IPNetwork.TryParse(value, out var network))
+        throw new InvalidOperationException(
+            $"ForwardedHeaders:KnownNetworks contains an invalid CIDR: '{value}'.");
+    knownNetworks.Add(network);
+}
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
-    options.KnownProxies.Add(IPAddress.Parse("::1"));
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    // Доверяем только явно перечисленным прокси, а не всему, что пришло в заголовке.
+    options.KnownProxies.Clear();
+    foreach (var proxy in knownProxies)
+        options.KnownProxies.Add(proxy);
+
+    options.KnownIPNetworks.Clear();
+    foreach (var network in knownNetworks)
+        options.KnownIPNetworks.Add(network);
 });
 
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
-        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 5,
-            Window = TimeSpan.FromMinutes(1),
-            QueueLimit = 0
-        }));
+    o.AddPolicy("auth", ctx =>
+    {
+        var address = ctx.Connection.RemoteIpAddress;
+        if (address is { IsIPv4MappedToIPv6: true })
+            address = address.MapToIPv4();
+
+        // После UseForwardedHeaders это IP клиента, а не общий адрес прокси.
+        return RateLimitPartition.GetFixedWindowLimiter(
+            address?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            });
+    });
 });
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

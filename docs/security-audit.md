@@ -132,7 +132,7 @@ GET /Note с токеном на JWT_SECRET из .env             -> 200
 
 **Исправление:** `DataAnnotations` или FluentValidation, `[Required]`, `[StringLength]`, минимальная длина пароля 12+, максимум 72 байта для BCrypt, правила для username.
 
-### 7. Приложение работает в PostgreSQL как суперпользователь
+### 7. Приложение работает в PostgreSQL как суперпользователь - исправленно
 
 **Где:** `docker-compose.yml:5-7,25-28`.
 
@@ -169,7 +169,7 @@ GET /Note с токеном на JWT_SECRET из .env             -> 200
 
 **Исправление:** глобальный exception handler + `ProblemDetails`; маппинг `UnauthorizedAccessException` → `401`, not found → `404`, duplicate → `409`; не отдавать наружу текст исключений.
 
-### 10. Слабая проверка JWT и долгий срок жизни
+### 10. Слабая проверка JWT и долгий срок жизни - исправленно
 
 **Где:**
 
@@ -212,3 +212,42 @@ GET /Note с токеном на JWT_SECRET из .env             -> 200
 - `backend/WebAPI/Controllers/NoteController.cs:21-27`;
 - `backend/WebAPI/Controllers/TaskController.cs:29-35`;
 - `backend/DataAccess/Data/AppDbContext.cs:16-17,26-27`.
+
+**Описание:**
+
+`GET` возвращает все записи пользователя. Лимиты длины строк есть только в БД, но не в DTO, поэтому слишком длинные значения дают `500`. Нет квот на количество заметок/задач.
+
+**Исправление:** пагинация, лимиты размера запроса, валидация длины, квоты и rate limiting для авторизованных пользователей.
+
+## Низкий риск и hardening
+
+- В `bruno/TodoWebApi/Note/Create note.yml:11` и `bruno/TodoWebApi/Task/Create task.yml:11` захардкожен Bearer-токен. Он истёк `2026-05-08 13:08 UTC` и не подписан текущим `.env`-секретом, но его нужно удалить; если он когда-то был рабочим, считать аккаунт `test` скомпрометированным.
+- Потенциальный stored XSS, если появится UI, который рендерит `Name`/`Text` как HTML. Сейчас фронтенда в проекте нет; при добавлении использовать экранирование и CSP.
+- В `backend/DataAccess/Data/UserRepo/UserRepository.cs:33` логируется имя пользователя; DTO-записи с `Password` при случайном логировании раскроют пароль через `ToString()`. Не логировать DTO и добавить redaction.
+- `backend/BusinessLogic/BusinessLogic.csproj:12-15`: `InternalsVisibleTo("xUnit-Tests")` без strong name.
+- `TaskProgressStatus` принимает произвольные числа (`TaskDtos.cs:6-7`, `TaskService.cs:54,75`) — добавить `Enum.IsDefined`.
+- `UserModel.PasswordHash` не помечен `[JsonIgnore]`; сейчас не утекает, но это защита на будущее.
+- `backend/DataAccess/Extensions.cs:17`: строка подключения собирается интерполяцией; лучше `NpgsqlConnectionStringBuilder`.
+- `backend/Dockerfile:1,13` и `docker-compose.yml:3` используют плавающие теги; закрепить digest и добавить сканирование образа (Trivy).
+- Нет `read_only`, `cap_drop`, `no-new-privileges` в compose; `USER app` в Dockerfile — хорошо.
+
+## Что проверено и находится в порядке
+
+- **IDOR:** заметки и задачи фильтруются по `UserId` из JWT; при честном токене чужой объект не доступен.
+- **SQL-инъекции:** EF LINQ с параметризацией; raw SQL только константный `SELECT 1`.
+- **Mass assignment:** DTO не содержат `UserId`, `ItemId`, `Created`.
+- **Пароли:** BCrypt с солью.
+- **CSRF/CORS:** токен передаётся в заголовке, cookie нет; CORS не настроен.
+- **NuGet:** `dotnet list package --vulnerable --include-transitive` — уязвимых пакетов не найдено.
+- **БД:** порт `5433` опубликован только на `127.0.0.1`.
+- **Контейнер API:** запущен не от root.
+
+## Приоритетный план
+
+1. Сменить `JWT_SECRET` и `DB_PASSWORD`, перезапустить API, удалить секреты из всех копий.
+2. Закрыть API TLS и убрать публикацию на `0.0.0.0`.
+3. Убрать дефолтный JWT-ключ и добавить fail-fast проверку конфигурации.
+4. Добавить rate limiting, lockout, валидацию и политику паролей.
+5. Добавить глобальный обработчик ошибок и корректные статусы.
+6. Включить audience validation, сократить срок токена, добавить отзыв.
+7. Выделить least-privilege роль БД, поправить `.dockerignore`, ограничить OpenAPI/Scalar.

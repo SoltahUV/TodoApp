@@ -2,8 +2,8 @@
 using BusinessLogic.Services.TaskService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Shared.Constraints;
 using WebAPI.Extensions;
+using WebAPI.Models;
 
 namespace WebAPI.Controllers
 {
@@ -30,19 +30,11 @@ namespace WebAPI.Controllers
         }
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(
-            [FromQuery] int skip = 0,
-            [FromQuery] int take = FieldLimits.DefaultPageSize,
+            [FromQuery] PaginationQuery pagination,
             CancellationToken ct = default)
         {
-
             var userId = User.GetUserId();
-
-            if (skip < 0)
-                return BadRequest(new { error = "skip must be non-negative" });
-            if (take < 1 || take > FieldLimits.MaxPageSize)
-                return BadRequest(new { error = $"take must be between 1 and {FieldLimits.MaxPageSize}" });
-
-            var result = await taskService.GetAllAsync(userId, skip, take, ct);
+            var result = await taskService.GetAllAsync(userId, pagination.Skip, pagination.Take, ct);
             return Ok(result);
         }
 

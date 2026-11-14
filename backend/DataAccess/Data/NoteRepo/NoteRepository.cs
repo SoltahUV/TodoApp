@@ -41,6 +41,8 @@ namespace DataAccess.Data.NoteRepo
             return await context.Notes
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.Created)
+                .ThenBy(x => x.ItemId)
                 .Skip(safeSkip)
                 .Take(safeTake)
                 .ToListAsync(cancellationToken);
