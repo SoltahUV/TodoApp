@@ -1,16 +1,26 @@
 # TodoApp
 
-Учебный REST API для заметок и задач. ASP.NET Core Web API (.NET 10), EF Core, PostgreSQL, JWT-аутентификация.
+Учебный REST API для заметок и задач. ASP.NET Core Web API (.NET 10), EF Core, PostgreSQL, JWT.
+
+## Что внутри
+
+- регистрация и вход, токен JWT (HS256), пароли хешируются BCrypt
+- CRUD для заметок и задач, пагинация через `skip` и `take`
+- записи видны только владельцу
+- лимит 5 запросов в минуту на `/auth/*`
+- API подключается к БД ролью без прав DDL, миграции идут отдельным сервисом
+- юнит- и интеграционные тесты, запускаются без БД и Docker
 
 ## Структура
 
-- `backend/WebAPI` — контроллеры, настройка приложения
-- `backend/BusinessLogic` — сервисы и DTO
-- `backend/DataAccess` — EF Core, модели, репозитории, миграции
-- `backend/Auth` — регистрация, вход, выдача JWT
-- `db/init` — SQL-инициализация Postgres (роль приложения)
-- `tests/xUnit-Tests` — xUnit-тесты
-- `bruno/` — коллекция запросов для Bruno
+- `backend/WebAPI`: контроллеры, middleware
+- `backend/BusinessLogic`: сервисы и DTO
+- `backend/DataAccess`: EF Core, репозитории, миграции
+- `backend/Auth`: регистрация, вход, выдача JWT
+- `backend/Shared`: лимиты полей, исключения, валидация
+- `tests`: xUnit и интеграционные тесты
+- `bruno`: коллекция запросов
+- `docs/security-audit.md`: аудит безопасности
 
 ## Запуск
 
@@ -18,75 +28,41 @@
 
 ```
 cp .env.example .env
-# впиши свои значения DB_PASSWORD, DB_APP_PASSWORD и JWT_SECRET
-# пароли сгенерируй: openssl rand -hex 24
+# вписать DB_PASSWORD, DB_APP_PASSWORD и JWT_SECRET
+# пароли: openssl rand -hex 24
 # JWT_SECRET: openssl rand -base64 48
 docker compose up --build
 ```
 
-API доступен на `http://localhost:5000` (порт опубликован только на `127.0.0.1`). Документация Scalar: `http://localhost:5000/scalar` (только в среде Development; в Docker включается файлом `docker-compose.override.yml`, он в `.gitignore` и создаётся локально: `services: api: environment: ASPNETCORE_ENVIRONMENT: Development`).
+API: `http://localhost:5000`. Документация Scalar: `http://localhost:5000/scalar`. Она работает только в среде Development, для Docker нужен локальный `docker-compose.override.yml` (в `.gitignore`):
 
-Миграции EF Core применяются автоматически: при `docker compose up --build` сервис `migrator` прогоняет их до старта `api`. При локальном запуске без Docker (`dotnet run`) миграции при старте не применяются, если не включён флаг: `dotnet user-secrets set "AutoMigrate" "true" --project backend/WebAPI` (работает только в Development и только под ролью с правами DDL). В остальных случаях используй `dotnet run --project backend/WebAPI -- --migrate` или сервис `migrator`.
+```yaml
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+```
 
-### Права в PostgreSQL
+## API
 
-Владелец БД `todo` (суперпользователь) используется только сервисом `migrator`. API подключается ролью `todo_app` с правами `SELECT/INSERT/UPDATE/DELETE` на `public`: без DDL, создания ролей и доступа к другим БД. Роль создаётся скриптом `db/init/01-app-role.sql` при первой инициализации пустого кластера; `ALTER DEFAULT PRIVILEGES` покрывает таблицы, которые позже создадут миграции.
+| Метод | Путь | Описание |
+|---|---|---|
+| POST | `/auth/register` | регистрация |
+| POST | `/auth/login` | вход, ответ `{ "token": "..." }` |
+| GET, POST | `/api/Notes`, `/api/Tasks` | список, создание |
+| GET, PUT, PATCH, DELETE | `/api/Notes/{id}`, `/api/Tasks/{id}` | одна запись |
 
-Если volume `pgdata` уже существовал до этого изменения, скрипт не выполнится — удали volume (`docker compose down -v`) либо создай роль вручную.
+Все пути `/api/*` требуют заголовок `Authorization: Bearer <token>`. Полная схема лежит в Scalar и в `/openapi/v1.json`.
 
 ## Тесты
 
-```bash
+```
 dotnet test
 ```
 
-97 тестов, БД и Docker не нужны: валидация DTO (как её видит MVC), контракт атрибутов на record-параметрах, сервисы на фейковых репозиториях, выпуск и проверка JWT, соответствие модели EF Core лимитам из `FieldLimits`.
+## Ограничения
 
-## Конфигурация
-
-Рабочие секреты не хранятся в репозитории и не имеют значений по умолчанию. При старте API проверяет конфигурацию и завершается с ошибкой, если она отсутствует, содержит placeholder или слишком слабый секрет.
-
-### Docker Compose
-
-| Переменная | Обязательна | По умолчанию | Назначение |
-|---|---|---|---|
-| `DB_PASSWORD` | да | — | пароль владельца БД `todo` (используется только миграциями) |
-| `DB_APP_PASSWORD` | да | — | пароль роли `todo_app`, под которой работает API |
-| `JWT_SECRET` | да | — | ключ подписи JWT, минимум 32 символа и не меньше 10 различных символов |
-| `JWT_ISSUER` | нет | `TodoApi` | значение `iss` в токене |
-| `JWT_AUDIENCE` | нет | `TodoApiClients` | значение `aud` в токене |
-| `JWT_EXPIRES_IN_MINUTES` | нет | `60` | срок жизни access-токена, от 5 до 1440 минут |
-
-### Запуск без Docker
-
-Нужны .NET 10 SDK и PostgreSQL. Задай `DatabaseConfiguration` и `JwtConfiguration` через user-secrets или переменные окружения:
-
-```
-dotnet user-secrets init --project backend/WebAPI
-dotnet user-secrets set "DatabaseConfiguration:Host" "localhost" --project backend/WebAPI
-dotnet user-secrets set "DatabaseConfiguration:Port" "5433" --project backend/WebAPI
-dotnet user-secrets set "DatabaseConfiguration:Database" "tododb" --project backend/WebAPI
-dotnet user-secrets set "DatabaseConfiguration:Username" "todo" --project backend/WebAPI
-dotnet user-secrets set "DatabaseConfiguration:Password" "<пароль>" --project backend/WebAPI
-dotnet user-secrets set "JwtConfiguration:SecretKey" "$(openssl rand -base64 48)" --project backend/WebAPI
-```
-
-Затем:
-
-```
-dotnet run --project backend/WebAPI
-```
-
-Переменные окружения имеют приоритет над `appsettings.json`; для вложенных ключей используется `__`, например `JwtConfiguration__SecretKey`.
-
-### JWT
-
-- подпись и проверка только `HS256`;
-- проверяются `iss`, `aud`, срок действия и подпись, допустимое расхождение часов — 30 секунд;
-- каждый токен получает уникальный `jti`;
-- после смены `JWT_SECRET` все ранее выданные токены становятся недействительными;
-- refresh-токены и механизм отзыва пока не реализованы.
-
-## PATCH
-
-`PATCH` обновляет только явно переданные поля: `null` означает "не менять". Очистить поле (установить `null`) через `PATCH` нельзя — используйте `PUT` для полной замены записи.
+- только HTTP, для публичного доступа нужен reverse proxy с TLS
+- нет refresh-токенов и отзыва токена
+- rate limit хранится в памяти процесса
+- список не возвращает общее число записей
